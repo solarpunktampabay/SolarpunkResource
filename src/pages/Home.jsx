@@ -12,7 +12,7 @@ const categories = [
   {
     id: 'Home',
     name: 'Upgrade your Home',
-    bgImg: '/image/athome.jpeg'
+    bgImg: '/image/athome.jpg'
   },
   {
     id: 'Work',
