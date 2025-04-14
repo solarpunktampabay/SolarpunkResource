@@ -6,6 +6,7 @@ import CategoryPage from './pages/CategoryPage.jsx';
 import Search from './pages/Search.jsx';
 import Recommend from './pages/Recommend.jsx';
 import './App.css';
+import './index.css';
 
 function App() {
   return (
