@@ -2,30 +2,47 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchActivities } from '../services/googleSheets';
 
-// Helper function to parse DD-MM-YYYY and format to MM-DD-YYYY
-const parseAndFormatDate = (dateString) => {
+// Helper function to parse MM-DD-YYYY string into a Date object (UTC start of day)
+// Returns null if the format is invalid or the date doesn't exist
+const parseMMDDYYYYToUTCDate = (dateString) => {
   if (!dateString || typeof dateString !== 'string') {
     return null;
   }
   const parts = dateString.split('-'); // Expects MM-DD-YYYY
   if (parts.length === 3) {
-    const month = parts[0]; // Month is the first part
-    const day = parts[1];   // Day is the second part
-    const year = parts[2];  // Year is the third part
-    // Create date string in a format JS understands (YYYY-MM-DD is reliable)
-    const reliableDateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    const date = new Date(reliableDateString);
-    // Check if the date is valid after parsing
-    if (!isNaN(date.getTime())) {
-      // Manual format for MM-DD-YYYY (Output remains the same)
-      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-      const formattedDay = String(date.getDate()).padStart(2, '0');
-      const formattedYear = date.getFullYear();
-      return `${formattedMonth}-${formattedDay}-${formattedYear}`;
+    const month = parseInt(parts[0], 10);
+    const day = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+
+    // Basic validation for numeric parts
+    if (isNaN(month) || isNaN(day) || isNaN(year) || month < 1 || month > 12 || day < 1 || day > 31) {
+      console.warn(`Invalid date components in: ${dateString}`);
+      return null;
     }
+
+    // Use Date.UTC to create the date timestamp (milliseconds since epoch)
+    // Note: month is 0-indexed in Date.UTC (0 for January, 11 for December)
+    const utcTimestamp = Date.UTC(year, month - 1, day);
+
+    // Create a Date object from the UTC timestamp
+    const date = new Date(utcTimestamp);
+
+    // Final validation: Check if the components of the created Date object match the input
+    // This catches invalid dates like 02-30-2024, as Date.UTC might adjust them (e.g., to March 1st)
+    if (
+      date.getUTCFullYear() !== year ||
+      date.getUTCMonth() !== month - 1 ||
+      date.getUTCDate() !== day
+    ) {
+       console.warn(`Invalid date (e.g., Feb 30) detected after UTC conversion: ${dateString}`);
+       return null; // Return null for dates that don't actually exist
+    }
+
+    return date; // Return the valid Date object representing UTC start of day
+
   }
   console.warn(`Invalid date format encountered (expected MM-DD-YYYY): ${dateString}`);
-  return "Invalid Date"; // Return specific string for invalid format
+  return null; // Return null for invalid format
 };
 
 const CategoryPage = () => {
@@ -150,7 +167,7 @@ const CategoryPage = () => {
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {subcategoryActivities.map((activity) => {
                   // Parse and format the date here
-                  const formattedDate = parseAndFormatDate(activity.expiredDate);
+                  const formattedDate = parseMMDDYYYYToUTCDate(activity.expiredDate);
 
                   return (
                     <div
@@ -169,7 +186,7 @@ const CategoryPage = () => {
                       {/* Conditionally render the date if it's valid */}
                       {formattedDate && formattedDate !== "Invalid Date" && (
                         <p className="text-earth-olive mt-1 italic ">
-                          Expires on: {formattedDate}
+                          Expires on: {formattedDate.toLocaleDateString()}
                         </p>
                       )}
                       <div className="mt-4 flex flex-wrap gap-2">
