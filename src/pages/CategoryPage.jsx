@@ -7,24 +7,24 @@ const parseAndFormatDate = (dateString) => {
   if (!dateString || typeof dateString !== 'string') {
     return null;
   }
-  const parts = dateString.split('-'); // Expects DD-MM-YYYY
+  const parts = dateString.split('-'); // Expects MM-DD-YYYY
   if (parts.length === 3) {
-    const day = parts[0];
-    const month = parts[1];
-    const year = parts[2];
+    const month = parts[0]; // Month is the first part
+    const day = parts[1];   // Day is the second part
+    const year = parts[2];  // Year is the third part
     // Create date string in a format JS understands (YYYY-MM-DD is reliable)
     const reliableDateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     const date = new Date(reliableDateString);
     // Check if the date is valid after parsing
     if (!isNaN(date.getTime())) {
-      // Manual format for MM-DD-YYYY
+      // Manual format for MM-DD-YYYY (Output remains the same)
       const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
       const formattedDay = String(date.getDate()).padStart(2, '0');
       const formattedYear = date.getFullYear();
       return `${formattedMonth}-${formattedDay}-${formattedYear}`;
     }
   }
-  console.warn(`Invalid date format encountered: ${dateString}`);
+  console.warn(`Invalid date format encountered (expected MM-DD-YYYY): ${dateString}`);
   return "Invalid Date"; // Return specific string for invalid format
 };
 
