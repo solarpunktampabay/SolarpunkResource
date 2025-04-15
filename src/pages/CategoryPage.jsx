@@ -91,16 +91,26 @@ const CategoryPage = () => {
           });
         }
 
-        // Filter out expired activities
-        const today = new Date();
+        // Filter out expired activities. Treat expiration date "MM-DD-YYYY" as the end of that day.
+        const nowUTC = new Date(); // Current instant in time (UTC)
+
         filteredActivities = filteredActivities.filter(activity => {
           if (activity.expiredDate) {
-            const expiredDate = new Date(activity.expiredDate);
-            if (isNaN(expiredDate)) {
-              console.warn(`Invalid expiredDate for activity "${activity.name}":`, activity.expiredDate);
+            // Parse the date string to the START of that day in UTC
+            const expirationStartOfDayUTC = parseMMDDYYYYToUTCDate(activity.expiredDate);
+
+            if (!expirationStartOfDayUTC) {
+              console.warn(`Invalid or unparseable expiredDate for activity "${activity.name}":`, activity.expiredDate);
               return true; // Keep items with invalid dates
             }
-            return expiredDate >= today; // Keep only non-expired items
+
+            // Calculate the expiration moment: START of the *next* day in UTC
+            // This represents the very end of the expiration day.
+            const expirationMomentUTC = new Date(expirationStartOfDayUTC.getTime());
+            expirationMomentUTC.setUTCDate(expirationMomentUTC.getUTCDate() + 1);
+
+            // Keep the item if the current time is strictly *before* the expiration moment
+            return nowUTC.getTime() < expirationMomentUTC.getTime();
           }
           return true; // Keep items without an expiredDate
         });
@@ -165,9 +175,35 @@ const CategoryPage = () => {
             
             {expandedSubcategory === subcategory && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {subcategoryActivities.map((activity) => {
-                  // Parse and format the date here
-                  const formattedDate = parseMMDDYYYYToUTCDate(activity.expiredDate);
+                {subcategoryActivities.map((activity, index) => {
+                  // Log 1: Raw expiredDate string from data
+                  if (index < 5) { // Log only for the first few items to avoid spam
+                    console.log(`Activity [${index}] Raw expiredDate:`, activity.expiredDate);
+                  }
+
+                  // Parse the expired date string into a UTC Date object
+                  const expiredDateUTC = parseMMDDYYYYToUTCDate(activity.expiredDate);
+
+                  // Log 2: Parsed Date object (UTC)
+                  if (index < 5 && expiredDateUTC) {
+                     console.log(`Activity [${index}] Parsed Date Object (UTC):`, expiredDateUTC, expiredDateUTC.toISOString());
+                  }
+
+                  // Format the UTC date object back to MM-DD-YYYY string for display
+                  let displayDate = null;
+                  if (expiredDateUTC) { // Ensure parsing was successful
+                    // Use UTC methods to extract date parts
+                    const month = String(expiredDateUTC.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(expiredDateUTC.getUTCDate()).padStart(2, '0');
+                    const year = expiredDateUTC.getUTCFullYear();
+
+                    // Log 3: Extracted UTC components for display
+                    if (index < 5) {
+                       console.log(`Activity [${index}] Display Components (UTC): Month=${month}, Day=${day}, Year=${year}`);
+                    }
+
+                    displayDate = `${month}-${day}-${year}`; // Reconstruct MM-DD-YYYY
+                  }
 
                   return (
                     <div
@@ -183,10 +219,10 @@ const CategoryPage = () => {
                       <p className="text-earth-dark/80 mt-2">
                         {activity.description}
                       </p>
-                      {/* Conditionally render the date if it's valid */}
-                      {formattedDate && formattedDate !== "Invalid Date" && (
+                      {/* Conditionally render the correctly formatted date string */}
+                      {displayDate && (
                         <p className="text-earth-olive mt-1 italic ">
-                          Expires on: {formattedDate.toLocaleDateString()}
+                          Expires on: {displayDate} 
                         </p>
                       )}
                       <div className="mt-4 flex flex-wrap gap-2">
