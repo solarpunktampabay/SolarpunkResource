@@ -3,32 +3,23 @@ import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   return (
-    <nav className="bg-earth-dark shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex">
-            <Link
-              to="/"
-              className="flex items-center px-2 py-2 text-earth-white hover:text-earth-peach transition-colors"
-            >
-              <span className="text-xl font-semibold">Practical Connections</span>
-            </Link>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link
-              to="/search"
-              className="px-3 py-2 rounded-md text-earth-white hover:text-earth-peach hover:bg-earth-dark-light transition-colors"
-            >
-              Search
-            </Link>
-            <Link
-              to="/recommend"
-              className="px-3 py-2 rounded-md text-earth-white hover:text-earth-peach hover:bg-earth-dark-light transition-colors"
+    <nav className="bg-earth-blue p-4 shadow-lg">
+      <div className="container mx-auto flex justify-between items-center">
+        <Link to="/" className="text-white text-2xl font-bold">Solarpunk Connections</Link>
+        <ul className="flex space-x-6">
+          <li><Link to="/" className="text-white hover:text-earth-peach transition-colors duration-300">Home</Link></li>
+          <li><Link to="/search" className="text-white hover:text-earth-peach transition-colors duration-300">Search</Link></li>
+          <li>
+            <a 
+              href="https://forms.gle/hdSHy8kjSz4giBsW9" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-white hover:text-earth-peach transition-colors duration-300"
             >
               Recommend
-            </Link>
-          </div>
-        </div>
+            </a>
+          </li>
+        </ul>
       </div>
     </nav>
   );
