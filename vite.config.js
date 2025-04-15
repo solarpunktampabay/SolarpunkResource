@@ -1,8 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
 
 export default defineConfig({
   plugins: [
@@ -10,59 +8,45 @@ export default defineConfig({
       // This ensures JSX is processed in .js files
       include: "**/*.{jsx,js}",
     }),
+    // Rely primarily on this plugin for polyfills
     nodePolyfills({
-      // Whether to polyfill specific globals
+      // You can customize options if needed, but defaults might be okay
       globals: {
-        process: true,
-        Buffer: true,
+        Buffer: true, // Ensure Buffer is polyfilled
+        process: true, // Ensure process is polyfilled
       },
-      // Whether to polyfill `node:` protocol imports
-      protocolImports: true,
+      protocolImports: true, // Polyfill node: imports
     }),
   ],
   resolve: {
     alias: {
-      'process': 'process/browser',
-      'stream': 'stream-browserify',
-      'crypto': 'crypto-browserify',
-      'buffer': 'buffer/',
-      'util': 'util/',
-      'assert': 'assert/',
-      'http': 'stream-http',
-      'https': 'https-browserify',
-      'os': 'os-browserify/browser',
-      'url': 'url/',
-      'path': 'path-browserify',
-      'querystring': 'querystring-es3',
-      'zlib': 'browserify-zlib'
+      // Add any other non-polyfill aliases you might need here
     }
   },
   define: {
-    'process.env': {},
-    'process.platform': JSON.stringify('browser'),
-    'process.version': JSON.stringify(process.version),
-    'process.stdout': JSON.stringify(null),
-    'process.stderr': JSON.stringify(null),
-    'process.stdin': JSON.stringify(null),
-    'process.isTTY': JSON.stringify(false)
+    // Add any other non-polyfill defines you might need here
+    // 'process.env': {} // Keep if needed for other reasons, but likely handled
   },
   optimizeDeps: {
-    exclude: [
-      'vite-plugin-node-polyfills/shims/buffer',
-      'vite-plugin-node-polyfills/shims/global',
-      'vite-plugin-node-polyfills/shims/process'
-    ],
     esbuildOptions: {
+      // Keep globalThis define if needed by other dependencies
       define: {
         global: 'globalThis'
-      },
-      plugins: [
-        NodeGlobalsPolyfillPlugin({
-          process: true,
-          buffer: true,
-        }),
-        NodeModulesPolyfillPlugin()
-      ]
-    }
+      }
+      // Removed the esbuild polyfill plugins
+      // plugins: [
+      //   NodeGlobalsPolyfillPlugin({
+      //     process: true,
+      //     buffer: true,
+      //   }),
+      //   NodeModulesPolyfillPlugin()
+      // ]
+    },
+    // Removed exclusions for now, the main plugin should handle this
+    // exclude: [
+    //   'vite-plugin-node-polyfills/shims/buffer',
+    //   'vite-plugin-node-polyfills/shims/global',
+    //   'vite-plugin-node-polyfills/shims/process'
+    // ],
   }
 }); 

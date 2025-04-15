@@ -2,6 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchActivities } from '../services/googleSheets';
 
+// Helper function to parse DD-MM-YYYY and format to MM-DD-YYYY
+const parseAndFormatDate = (dateString) => {
+  if (!dateString || typeof dateString !== 'string') {
+    return null;
+  }
+  const parts = dateString.split('-'); // Expects DD-MM-YYYY
+  if (parts.length === 3) {
+    const day = parts[0];
+    const month = parts[1];
+    const year = parts[2];
+    // Create date string in a format JS understands (YYYY-MM-DD is reliable)
+    const reliableDateString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const date = new Date(reliableDateString);
+    // Check if the date is valid after parsing
+    if (!isNaN(date.getTime())) {
+      // Manual format for MM-DD-YYYY
+      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+      const formattedDay = String(date.getDate()).padStart(2, '0');
+      const formattedYear = date.getFullYear();
+      return `${formattedMonth}-${formattedDay}-${formattedYear}`;
+    }
+  }
+  console.warn(`Invalid date format encountered: ${dateString}`);
+  return "Invalid Date"; // Return specific string for invalid format
+};
+
 const CategoryPage = () => {
   const { categoryId } = useParams();
   const [activities, setActivities] = useState([]);
@@ -122,49 +148,53 @@ const CategoryPage = () => {
             
             {expandedSubcategory === subcategory && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {subcategoryActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="bg-white/90 rounded-lg shadow-lg p-4 border border-earth-olive/20 hover:shadow-xl transition-shadow duration-200"
-                  >
-                    <h3 className="text-lg font-semibold text-earth-dark">
-                      {activity.name}
-                    </h3>
-                    <p className="text-earth-olive mt-1">
-                      {activity.location}
-                    </p>
-                    <p className="text-earth-dark/80 mt-2">
-                      {activity.description}
-                    </p>
-                    <p className="text-earth-olive mt-1 italic ">
-                      {activity.expiredDate && `Expires on: ${new Date(activity.expiredDate).toLocaleDateString('en-US', {
-                        year: '2-digit',
-                        month: '2-digit',
-                        day: '2-digit'
-                      })}`}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {activity.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 bg-earth-blue/10 text-earth-dark rounded-full text-sm"
+                {subcategoryActivities.map((activity) => {
+                  // Parse and format the date here
+                  const formattedDate = parseAndFormatDate(activity.expiredDate);
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="bg-white/90 rounded-lg shadow-lg p-4 border border-earth-olive/20 hover:shadow-xl transition-shadow duration-200"
+                    >
+                      <h3 className="text-lg font-semibold text-earth-dark">
+                        {activity.name}
+                      </h3>
+                      <p className="text-earth-olive mt-1">
+                        {activity.location}
+                      </p>
+                      <p className="text-earth-dark/80 mt-2">
+                        {activity.description}
+                      </p>
+                      {/* Conditionally render the date if it's valid */}
+                      {formattedDate && formattedDate !== "Invalid Date" && (
+                        <p className="text-earth-olive mt-1 italic ">
+                          Expires on: {formattedDate}
+                        </p>
+                      )}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {activity.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-1 bg-earth-blue/10 text-earth-dark rounded-full text-sm"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      {activity.websiteUrl && (
+                        <a 
+                          href={activity.websiteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-4 inline-block px-4 py-2 bg-earth-peach text-earth-white rounded-md hover:bg-earth-peach-light transition-colors"
                         >
-                          {tag}
-                        </span>
-                      ))}
+                          Visit Website
+                        </a>
+                      )}
                     </div>
-                    {activity.websiteUrl && (
-                      <a 
-                        href={activity.websiteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 inline-block px-4 py-2 bg-earth-peach text-earth-white rounded-md hover:bg-earth-peach-light transition-colors"
-                      >
-                        Visit Website
-                      </a>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
