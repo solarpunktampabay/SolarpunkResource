@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx';
 import CategoryPage from './pages/CategoryPage.jsx';
 import Search from './pages/Search.jsx';
 import Recommend from './pages/Recommend.jsx';
+import AboutPage from './pages/AboutPage.jsx';
 import './App.css';
 import './index.css';
 
@@ -19,6 +20,7 @@ function App() {
             <Route path="/category/:categoryId" element={<CategoryPage />} />
             <Route path="/search" element={<Search />} />
             <Route path="/recommend" element={<Recommend />} />
+            <Route path="/about" element={<AboutPage />} />
           </Routes>
         </main>
       </div>
