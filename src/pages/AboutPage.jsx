@@ -4,7 +4,7 @@ const AboutPage = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <h1 className="text-4xl font-bold text-center mb-8 text-earth-dark">
-        About Solarpunk Resource
+        Rooted in Purpose
       </h1>
 
       <div className="bg-earth-white/80 rounded-lg p-6 md:p-8 border border-earth-olive shadow-lg backdrop-blur-sm space-y-6 text-earth-dark/90">
@@ -23,9 +23,6 @@ const AboutPage = () => {
         <hr className="border-earth-olive/30 my-6" />
 
         <section>
-          <h2 className="text-2xl font-semibold text-earth-dark mb-4">
-            Our Mission
-          </h2>
           <p className="text-lg leading-relaxed mb-4">
             Through crowdsourcing via student submissions in Dr. Hargrove's USF Honor's classes, we have compiled a database of resources that will help USF students and Tampa residents get involved with their community and make improvements and changes to their lives that will help us create more sustainable futures! Explore and find ways that you can benefit and contribute to your community and the environment.
           </p>
