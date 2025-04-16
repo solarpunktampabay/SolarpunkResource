@@ -16,17 +16,18 @@ const Navbar = () => {
           </div>
           <div className="flex items-center space-x-4">
             <Link
-              to="/search"
-              className="px-3 py-2 rounded-md text-earth-white hover:text-earth-peach hover:bg-earth-dark-light transition-colors"
-            >
-              Search
-            </Link>
-            <Link
               to="/about"
               className="px-3 py-2 rounded-md text-earth-white hover:text-earth-peach hover:bg-earth-dark-light transition-colors"
             >
               About
             </Link>
+            <Link
+              to="/search"
+              className="px-3 py-2 rounded-md text-earth-white hover:text-earth-peach hover:bg-earth-dark-light transition-colors"
+            >
+              Search
+            </Link>
+            
             <a
               href="https://forms.gle/hdSHy8kjSz4giBsW9"
               target="_blank"
