@@ -1,0 +1,49 @@
+name: Monthly link check
+
+# Checks every "Website URL" in the Google Sheet the website reads and writes
+# Link Status / Last Checked / Check Reason back to it. Rows are never deleted;
+# the website hides rows whose Link Status is Expired or Invalid.
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"   # 1st of every month, 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (check links and make the report, but do NOT write to the sheet)"
+        type: boolean
+        default: true
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run link checker
+        env:
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            python check_links.py --source sheet --dry-run
+          else
+            python check_links.py --source sheet
+          fi
+
+      - name: Upload review report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-check-report
+          path: link_check_report.csv
+          if-no-files-found: ignore

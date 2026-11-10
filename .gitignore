@@ -34,4 +34,16 @@ yarn-error.log*
 next-env.d.ts
 
 # credentials
-src/services/credentials.json 
+src/services/credentials.json
+src/services/credentials.json.json
+*credentials*.json
+service-account*.json
+
+# link checker output
+Activities_checked.xlsx
+link_check_report.csv
+*.pkl.gz
+
+# python
+__pycache__/
+*.pyc
