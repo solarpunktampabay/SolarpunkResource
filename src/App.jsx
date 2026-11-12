@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
+import LazyScript from './components/LazyScript.jsx';
 import Home from './pages/Home.jsx';
 import CategoryPage from './pages/CategoryPage.jsx';
 import Search from './pages/Search.jsx';
@@ -17,6 +18,11 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      {/* Third-party widget, loaded after the page finishes loading */}
+      <LazyScript
+        src="https://imgnilabs.com/widget.js"
+        attrs={{ 'data-project': 'cmwdw9iw907qss60qxtubmps7' }}
+      />
       <div className="min-h-screen bg-paper text-ink flex flex-col">
         <Navbar />
         <main id="main" className="flex-1">
