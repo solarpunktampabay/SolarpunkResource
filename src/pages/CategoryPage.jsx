@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchActivities } from '../services/googleSheets';
-import { parseMMDDYYYYToUTCDate, formatUTCDateToMMDDYYYY } from '../utils/dateUtils';
+import { parseMMDDYYYYToUTCDate } from '../utils/dateUtils';
+import { categories, categoryMapping } from '../data/categories';
+import ActivityCard from '../components/ActivityCard';
 
 const CategoryPage = () => {
   const { categoryId } = useParams();
@@ -9,21 +11,9 @@ const CategoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [expandedSubcategory, setExpandedSubcategory] = useState(null);
 
-  // Category mapping for display --> try to automate it
-  const categoryMapping = {
-    'Internship': 'Internship, Grant, Job Opportunity, Graduate School',
-    'Home': 'Upgrade your Home',
-    'Work': 'At work',
-    'Community': 'Community Engagement',
-    'Waste': 'Waste Reduction/ Disposal',
-    'Government': 'Government',
-    'USF': 'USF Specific (Go Bulls!)',
-    'Donate': 'Donate/ Use your Resources',
-    'Entertainment': 'Entertainment, Utility, Education, News'
-  };
-
   // Get the display name for the category
   const displayCategoryName = categoryMapping[categoryId] || categoryId;
+  const categoryMeta = categories.find((c) => c.id === categoryId);
 
   useEffect(() => {
     const loadActivities = async () => {
@@ -95,97 +85,90 @@ const CategoryPage = () => {
     return acc;
   }, {});
 
+
+  // Loading state
   if (loading) {
-    return <div className="text-center text-earth-dark">Loading...</div>;
+    return (
+      <div className="byline py-24 text-center" role="status">
+        Loading resources…
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-center mb-8 text-earth-dark">
-        {displayCategoryName}
-      </h1>
-      
-      {activities.length === 0 && !loading && (
-        <div className="p-4 bg-earth-white text-earth-dark rounded-md border border-earth-dark/20">
-          No activities found for this category. Please check your data in Google Sheets.
-        </div>
-      )}
-      
-      <div className="space-y-4">
-        {Object.entries(activitiesBySubcategory).map(([subcategory, subcategoryActivities]) => (
-          <div 
-            key={subcategory}
-            className="bg-earth-white/80 rounded-lg p-4 border border-earth-olive shadow-md backdrop-blur-sm"
-          >
-            <button
-              onClick={() => setExpandedSubcategory(
-                expandedSubcategory === subcategory ? null : subcategory
-              )}
-              className="w-full text-left flex justify-between items-center"
-            >
-              <h2 className="text-xl font-semibold text-earth-dark">
-                {subcategory}
-              </h2>
-              <span className="text-earth-peach">
-                {expandedSubcategory === subcategory ? '▼' : '▶'}
-              </span>
-            </button>
-            
-            {expandedSubcategory === subcategory && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {subcategoryActivities.map((activity, index) => {
-                  // Parse the date
-                  const expiredDateUTC = parseMMDDYYYYToUTCDate(activity.expiredDate);
-                  // Format the date for display using the imported helper
-                  const displayDate = expiredDateUTC ? formatUTCDateToMMDDYYYY(expiredDateUTC) : null;
+  const subcategoryEntries = Object.entries(activitiesBySubcategory);
 
-                  return (
-                    <div
-                      key={activity.id}
-                      className="bg-white/90 rounded-lg shadow-lg p-4 border border-earth-olive/20 hover:shadow-xl transition-shadow duration-200"
-                    >
-                      <h3 className="text-lg font-semibold text-earth-dark">
-                        {activity.name}
-                      </h3>
-                      <p className="text-earth-olive mt-1">
-                        {activity.location}
-                      </p>
-                      <p className="text-earth-dark/80 mt-2">
-                        {activity.description}
-                      </p>
-                      {/* Conditionally render the formatted date string */}
-                      {displayDate && (
-                        <p className="text-earth-olive mt-1 italic ">
-                          Expires on: {displayDate}
-                        </p>
-                      )}
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {activity.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-1 bg-earth-blue/10 text-earth-dark rounded-full text-sm"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                      {activity.websiteUrl && (
-                        <a 
-                          href={activity.websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-4 inline-block px-4 py-2 bg-earth-peach text-earth-white rounded-md hover:bg-earth-peach-light transition-colors"
-                        >
-                          Visit Website
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+  return (
+    <div>
+      {/* Page header */}
+      <header>
+        {categoryMeta && (
+          <div className="overflow-hidden bg-forest">
+            <img
+              src={categoryMeta.bgImg}
+              alt=""
+              className="aspect-[4/3] max-h-[640px] w-full object-cover sm:aspect-[16/9] lg:aspect-[2/1]"
+            />
           </div>
-        ))}
+        )}
+
+        <div className="mt-8 sm:mt-10">
+          <p className="byline dots flex flex-wrap">
+            <span>Topic</span>
+            <span>
+              {activities.length} {activities.length === 1 ? 'resource' : 'resources'}
+              {subcategoryEntries.length > 0 &&
+                ` in ${subcategoryEntries.length} ${subcategoryEntries.length === 1 ? 'section' : 'sections'}`}
+            </span>
+          </p>
+          <h1 className="headline-xl mt-4">{displayCategoryName}</h1>
+          {categoryMeta?.blurb && <p className="deck mt-5 max-w-2xl">{categoryMeta.blurb}</p>}
+        </div>
+      </header>
+
+      {activities.length === 0 && (
+        <p className="title-serif mt-12 border-y border-dotted border-ink py-8 text-muted">
+          No activities found for this category. Please check your data in Google Sheets.
+        </p>
+      )}
+
+      {/* Subcategory sections */}
+      <div className="mt-14">
+        {subcategoryEntries.map(([subcategory, subcategoryActivities]) => {
+          const isOpen = expandedSubcategory === subcategory;
+          return (
+            <section key={subcategory} className="rule-b first:border-t first:border-dotted first:border-ink">
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                onClick={() => setExpandedSubcategory(isOpen ? null : subcategory)}
+                className="group flex w-full items-center justify-between gap-4 py-5 text-left"
+              >
+                <h2 className="font-display text-2xl font-medium tracking-[-0.003em] group-hover:underline underline-offset-4 decoration-1 sm:text-[28px]">
+                  {subcategory}
+                </h2>
+                <span className="flex shrink-0 items-center gap-3 font-sans text-sm font-bold">
+                  <span>{subcategoryActivities.length}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`inline-flex h-8 w-8 items-center justify-center border border-forest text-lg leading-none transition-colors ${
+                      isOpen ? 'bg-forest text-white' : 'bg-white text-forest group-hover:bg-forest group-hover:text-white'
+                    }`}
+                  >
+                    {isOpen ? '−' : '+'}
+                  </span>
+                </span>
+              </button>
+
+              {isOpen && (
+                <div className="grid gap-x-8 gap-y-10 pb-10 pt-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {subcategoryActivities.map((activity) => (
+                    <ActivityCard key={activity.id} activity={activity} />
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

@@ -1,3 +1,8 @@
+// "Link Status" values written by check_links.py that should be hidden from the site.
+// Other statuses (Likely Expired, Unknown, Bad URL, Active) stay visible.
+// To hide more, add them here, e.g. 'Likely Expired'.
+const HIDDEN_LINK_STATUSES = ['Expired', 'Invalid'];
+
 // Simple fetch function to get data from Google Sheets
 export const fetchActivities = async () => {
   try {
@@ -38,7 +43,7 @@ export const fetchActivities = async () => {
     };
     
     // Use the Google Sheets API v4 with API key
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Activities!A1:H?key=${apiKey}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Activities!A1:Z?key=${apiKey}`;
     console.log('Request URL:', url);
     
     const response = await fetch(url);
@@ -70,8 +75,15 @@ export const fetchActivities = async () => {
       console.log('Second row:', data.values[2]);
     }
     
+    // Annotation columns written by check_links.py. Found by header name (not position)
+    // so inserting a column in the sheet doesn't break this.
+    const headerRow = data.values[0].map(h => (h || '').trim().toLowerCase());
+    const statusCol = headerRow.indexOf('link status');
+    const overrideCol = headerRow.indexOf('link override');
+    const reasonCol = headerRow.indexOf('check reason');
+
     // Skip the first row (headers) and process the rest
-    const processedData = data.values.slice(1).map((row, index) => {
+    const allItems = data.values.slice(1).map((row, index) => {
       // Get the short category from the spreadsheet
       const shortCategory = row[1] || '';
       console.log(`Row ${index + 1} has short category:`, shortCategory);
@@ -82,6 +94,8 @@ export const fetchActivities = async () => {
       
       const item = {
         id: (index + 1).toString(),
+        // Row number in the Google Sheet (row 1 is the header), used when reporting a link
+        sheetRow: index + 2,
         name: row[0] || '',
         categories: [fullCategory],
         subcategory: row[2] || '',
@@ -90,14 +104,23 @@ export const fetchActivities = async () => {
         tags: (row[5] || '').split(',').map(tag => tag.trim()).filter(Boolean),
         websiteUrl: row[6] || '',
         expiredDate: row[7] || '',
+        linkStatus: statusCol >= 0 ? (row[statusCol] || '').trim() : '',
+        linkOverride: overrideCol >= 0 ? (row[overrideCol] || '').trim() : '',
+        linkReason: reasonCol >= 0 ? (row[reasonCol] || '').trim() : '',
       };
 
-
-      
       console.log(`Processed item ${index + 1}:`, item);
       return item;
     });
-    
+
+    // Hide listings the link checker flagged as dead. Fails open: rows with no status
+    // (checker hasn't run yet) are shown, and a non-empty "Link Override" always shows.
+    // ids are assigned above, before filtering, so they stay stable.
+    const processedData = allItems.filter(
+      item => item.linkOverride || !HIDDEN_LINK_STATUSES.includes(item.linkStatus)
+    );
+    console.log(`Hid ${allItems.length - processedData.length} listings flagged by the link checker.`);
+
     console.log('Final processed data:', processedData);
     return processedData;
   } catch (error) {
@@ -116,7 +139,10 @@ const mockData = [
     location: "Downtown",
     description: "Join our community garden project. Learn about sustainable gardening, meet neighbors, and grow your own vegetables.",
     tags: ["sustainability", "community", "health"],
-    websiteUrl: "https://example.com/garden"
+    websiteUrl: "https://example.com/garden",
+    sheetRow: 2,
+    linkStatus: "Unknown",
+    linkReason: "HTTP 403 (blocked or restricted; check by hand)"
   },
   {
     id: 2,
@@ -126,6 +152,9 @@ const mockData = [
     location: "Online",
     description: "Learn in-demand tech skills through hands-on workshops. Perfect for career changers and skill upgraders.",
     tags: ["technology", "career", "education"],
-    websiteUrl: "https://example.com/tech-workshop"
+    websiteUrl: "https://example.com/tech-workshop",
+    sheetRow: 3,
+    linkStatus: "Unknown",
+    linkReason: "Redirected to a login page"
   }
 ];
