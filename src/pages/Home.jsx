@@ -10,7 +10,7 @@ const byId = (id) => categories.find((c) => c.id === id);
 const href = (c) => `/category/${encodeURIComponent(c.id)}`;
 
 // How many entries the "Recent opportunities" sidebar shows
-const RECENT_COUNT = 5;
+const RECENT_COUNT = 6;
 
 // True unless the listing's expiration date (MM-DD-YYYY, end of that day) has passed
 const isActive = (activity) => {
