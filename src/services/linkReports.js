@@ -12,7 +12,7 @@ export const VERDICT_EXPIRED = 'expired';
 
 // Google Apps Script web app that records answers in the "Link Reports" tab.
 const REPORT_URL =
-  'https://script.google.com/macros/s/AKfycbxmh9kVeZ7bsYyxrEykrWLS55H_L7RDpL3wS45T0PVr_kqy-Dc_BvXaBtkfTqA-wk_8nw/exec';
+  'https://script.google.com/macros/s/AKfycbwqsD9XuVxKx88s9Kt-cf1U7e410z6sd_4hECBHfMjSjJtHeynYkvlU6FtPv806iVxZzg/exec';
 
 const STORAGE_KEY = 'pc-link-reports-v1';
 
