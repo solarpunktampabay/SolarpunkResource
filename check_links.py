@@ -20,6 +20,12 @@ Either way a CSV review report lists every row that is not "Active".
 Optional column "Link Override": if a row has anything in it, the row is skipped
 (not re-checked, annotation left as is) so a human can pin a listing as good.
 
+Visitor answers: the website's /check-links page sends "still valid" / "expired" answers
+to apps-script/link-reports.gs, which updates this sheet (Link Status = Active or
+Expired, Check Reason = "Community: ... [url]"). Rows with that marker for their current
+URL are skipped here, so people's answers are not overwritten. Edit the URL or clear the
+Check Reason cell to have the checker look at the row again.
+
 Google Sheet setup (sheet mode):
     SPREADSHEET_ID                env var or --sheet-id (same ID as VITE_SPREADSHEET_ID)
     GOOGLE_SERVICE_ACCOUNT_JSON   env var holding the service-account JSON, or
@@ -82,6 +88,12 @@ URL_HEADER = "Website URL"
 NAME_HEADER = "Name"
 NEW_COLUMNS = ["Link Status", "Last Checked", "Check Reason"]
 OVERRIDE_HEADER = "Link Override"   # optional, human-filled; non-empty => skip this row
+REASON_HEADER = "Check Reason"
+# The website's /check-links page sends visitor answers to an Apps Script
+# (apps-script/link-reports.gs), which writes "Community: ..." into Check Reason and
+# sets Link Status to Active (still valid) or Expired. Rows carrying that marker
+# for their CURRENT url are settled by people and are not re-checked here.
+COMMUNITY_MARKER = "Community:"
 
 WORKERS = 12
 CONNECT_TIMEOUT = 8
@@ -602,6 +614,7 @@ def load_rows(wb, sheet_name):
         (c for h, c in headers.items() if h.lower().startswith(EXPIRED_DATE_HEADER_PREFIX)), None
     )
     override_col = headers.get(OVERRIDE_HEADER)
+    reason_col = headers.get(REASON_HEADER)
 
     rows = []
     for r in range(2, ws.max_row + 1):
@@ -618,6 +631,7 @@ def load_rows(wb, sheet_name):
             "subcategory": str(ws.cell(r, subcat_col).value or "") if subcat_col else "",
             "expired_raw": ws.cell(r, expired_col).value if expired_col else None,
             "override": str(ws.cell(r, override_col).value or "").strip() if override_col else "",
+            "prev_reason": str(ws.cell(r, reason_col).value or "") if reason_col else "",
         })
     return ws, headers, rows
 
@@ -647,6 +661,7 @@ def load_rows_from_sheet(ws):
         (c for h, c in headers.items() if h.lower().startswith(EXPIRED_DATE_HEADER_PREFIX)), None
     )
     override_col = headers.get(OVERRIDE_HEADER)
+    reason_col = headers.get(REASON_HEADER)
 
     rows = []
     for r in range(2, len(values) + 1):
@@ -660,8 +675,21 @@ def load_rows_from_sheet(ws):
             "subcategory": str(_cell(values, r, subcat_col)),
             "expired_raw": _cell(values, r, expired_col) or None,
             "override": str(_cell(values, r, override_col)).strip(),
+            "prev_reason": str(_cell(values, r, reason_col)),
         })
     return headers, rows
+
+
+def settled_by_community(row):
+    """
+    True when visitors already answered for this row's CURRENT url. The Apps Script
+    writes 'Community: ... [<url>]' into Check Reason; if someone later edits the URL
+    in the sheet the marker no longer matches and the row is checked again.
+    """
+    reason = row.get("prev_reason") or ""
+    if not reason.startswith(COMMUNITY_MARKER):
+        return False
+    return any(u and u in reason for u in (row.get("raw"), row.get("url")))
 
 
 def open_worksheet(sheet_id, credentials_path, sheet_name):
@@ -840,6 +868,13 @@ def main():
     if pinned:
         rows = [r for r in rows if not r.get("override")]
         print(f"Skipping {len(pinned)} rows with a '{OVERRIDE_HEADER}' value.")
+
+    # Rows visitors already answered on the website's /check-links page (valid or
+    # expired) keep that answer; they are not fetched or re-annotated.
+    settled = [r for r in rows if settled_by_community(r)]
+    if settled:
+        rows = [r for r in rows if not settled_by_community(r)]
+        print(f"Skipping {len(settled)} rows already settled by visitor answers.")
 
     today = dt.date.today()
 
